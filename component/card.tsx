@@ -3,7 +3,11 @@ import React, { useState } from "react";
 import Checkbox from "expo-checkbox";
 import { Ionicons } from "@expo/vector-icons";
 
-const Card = ({ text }) => {
+interface CardProps {
+  text: string;
+}
+
+const Card = ({ text }: CardProps) => {
   const [toggleCheckBox, setToggleCheckBox] = useState(false);
 
   return (
