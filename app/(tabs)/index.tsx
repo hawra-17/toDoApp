@@ -15,8 +15,8 @@ import Card from "../../component/card";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function index() {
-  const [task, setTask] = useState();
-  const [taskItems, setTaskItems] = useState([]);
+  const [task, setTask] = useState<string>("");
+  const [taskItems, setTaskItems] = useState<string[]>([]);
 
   const addTask = () => {
     Keyboard.dismiss();
