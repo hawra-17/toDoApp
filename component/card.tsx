@@ -12,7 +12,7 @@ const Card = ({ text, onDelete }: CardProps) => {
   const [toggleCheckBox, setToggleCheckBox] = useState(false);
 
   return (
-    <View className=" p-3 rounded-3xl bg-slate-500 mt-10 mx-10 shadow flex flex-row items-center">
+    <View className=" p-3 rounded-lg bg-slate-500 mt-10 mx-10 shadow flex flex-row items-center">
       <Checkbox
         value={toggleCheckBox}
         onValueChange={(newValue) => setToggleCheckBox(newValue)}

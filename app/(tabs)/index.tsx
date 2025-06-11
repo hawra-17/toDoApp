@@ -1,27 +1,29 @@
 import {
-  Text,
-  TextInput,
-  View,
-  Button,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
-  ScrollView,
+  View,
   Keyboard,
 } from "react-native";
 import React, { useState } from "react";
-import Card from "../../component/card";
-import { Ionicons } from "@expo/vector-icons";
+import TaskList from "../../component/TaskList";
+import TaskInput from "../../component/TaskInput";
 
 export default function index() {
   const [task, setTask] = useState<string>("");
   const [taskItems, setTaskItems] = useState<string[]>([]);
 
   const addTask = () => {
+    if (!task.trim()) return;
     Keyboard.dismiss();
     setTaskItems([...taskItems, task]);
     setTask("");
+  };
+
+  const deleteTask = (index: number) => {
+    const copy = [...taskItems];
+    copy.splice(index, 1);
+    setTaskItems(copy);
   };
 
   return (
@@ -29,40 +31,11 @@ export default function index() {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={80} // adjust if needed
+        keyboardVerticalOffset={10}
       >
         <View className="flex-1">
-          <ScrollView className="flex-1">
-            <View className="mt-5 ml-5">
-              <Text className="text-3xl text-blue-500">Today's tasks</Text>
-            </View>
-            {taskItems.map((item, index) => {
-              return (
-                <Card
-                  key={index}
-                  text={item}
-                  onDelete={() => {
-                    let copyTask = [...taskItems];
-                    copyTask.splice(index, 1);
-                    setTaskItems(copyTask);
-                  }}
-                />
-              );
-            })}
-          </ScrollView>
-
-          {/* Input at the bottom */}
-          <View className="flex-row items-center justify-around px-4 py-3 border-t border-gray-200">
-            <TextInput
-              className="border-2 rounded-3xl px-5 py-3 flex-1 mr-3"
-              placeholder="Enter the text"
-              value={task}
-              onChangeText={(text) => setTask(text)}
-            />
-            <TouchableOpacity onPress={() => addTask()}>
-              <Ionicons name="add-circle" size={40} />
-            </TouchableOpacity>
-          </View>
+          <TaskList tasks={taskItems} onDelete={deleteTask} />
+          <TaskInput text={task} onChange={setTask} onAdd={addTask} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
