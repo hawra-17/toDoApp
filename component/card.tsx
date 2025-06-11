@@ -5,9 +5,10 @@ import { Ionicons } from "@expo/vector-icons";
 
 interface CardProps {
   text: string;
+  onDelete: () => void;
 }
 
-const Card = ({ text }: CardProps) => {
+const Card = ({ text, onDelete }: CardProps) => {
   const [toggleCheckBox, setToggleCheckBox] = useState(false);
 
   return (
@@ -22,7 +23,7 @@ const Card = ({ text }: CardProps) => {
         {text}
       </Text>
       <View className="flex-1 items-end ">
-        <TouchableOpacity onPress={() => alert("delete ? ")}>
+        <TouchableOpacity onPress={onDelete}>
           <Ionicons name="trash" size={24} />
         </TouchableOpacity>
       </View>

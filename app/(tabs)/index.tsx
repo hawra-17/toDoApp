@@ -37,7 +37,17 @@ export default function index() {
               <Text className="text-3xl text-blue-500">Today's tasks</Text>
             </View>
             {taskItems.map((item, index) => {
-              return <Card key={index} text={item} />;
+              return (
+                <Card
+                  key={index}
+                  text={item}
+                  onDelete={() => {
+                    let copyTask = [...taskItems];
+                    copyTask.splice(index, 1);
+                    setTaskItems(copyTask);
+                  }}
+                />
+              );
             })}
           </ScrollView>
 
