@@ -7,13 +7,13 @@ import Rest from "@/component/restOfLogin";
 
 export default function profile() {
   return (
-    <SafeAreaView className="bg-gray-500/15 flex items-center mt-20 mx-5 rounded-3xl shadow-xl ">
-      <Text className="font-bold text-xl">Sign in to your account</Text>
-      <View>
+    <SafeAreaView className="flex-1 items-center justify-center">
+      <View className="bg-gray-500/15 w-11/12 max-w-md rounded-3xl shadow-xl p-6 items-center space-y-4">
+        <Text className="font-bold text-xl">Sign in to your account</Text>
         <SignCard />
+        <Line />
+        <Rest />
       </View>
-      <Line />
-      <Rest />
     </SafeAreaView>
   );
 }
