@@ -33,10 +33,10 @@ const Card = ({
       </Text>
       <View className="flex-1 items-end flex-row justify-end gap-3 ">
         <TouchableOpacity onPress={onDelete}>
-          <Ionicons name="trash" size={24} color="black" />
+          <Ionicons name="trash" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={onUpdate}>
-          <Ionicons name="pencil" size={24} color="black" />
+          <Ionicons name="pencil" size={24} color="white" />
         </TouchableOpacity>
       </View>
     </View>

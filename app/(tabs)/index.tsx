@@ -15,30 +15,6 @@ export default function index() {
   const [checkedItems, setCheckedItems] = useState<boolean[]>([]);
   const [editIndex, setEditIndex] = useState<number | null>(null); // it's check if it's null so new task if not edit the task with this index
 
-  // const addTask = () => {
-  //   if (!task.trim()) return;
-  //   Keyboard.dismiss();
-  //   setTaskItems([...taskItems, task]);
-  //   setCheckedItems([...checkedItems, false]);
-  //   setTask("");
-  // };
-  // const addTask = () => {
-  //   if (!task.trim()) return;
-
-  //   if (editIndex !== null) {
-  //     const updatedTasks = [...taskItems];
-  //     updatedTasks[editIndex] = task;
-  //     setTaskItems(updatedTasks);
-  //     setEditIndex(null); // Reset edit mode
-  //   } else {
-  //     setTaskItems([...taskItems, task]);
-  //     setCheckedItems([...checkedItems, false]);
-  //   }
-
-  //   setTask(""); // Clear input
-  //   Keyboard.dismiss();
-  // };
-
   const addTask = () => {
     if (!task.trim()) return;
 
@@ -65,14 +41,6 @@ export default function index() {
     setCheckedItems(copyCheckedItems);
   };
 
-  // const update = (index: number, text: string) => {
-  //   const copyTask = [...taskItems];
-  //   copyTask[index] = text;
-  //   setTaskItems(copyTask);
-  // };
-  // const startEdit = (index: number) => {
-  //   setTask(taskItems[index]); // Send the selected task text into the input
-  // };
   const startEdit = (index: number) => {
     setTask(taskItems[index]); // Load task text into input
     setEditIndex(index); // Remember which task is being edited
