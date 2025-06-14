@@ -5,7 +5,7 @@ import Card from "./card";
 interface TaskListProps {
   tasks: string[];
   onDelete: (index: number) => void;
-  onUpdate: (index: number, text: string) => void;
+  onUpdate: (index: number) => void;
   checkedItems: boolean[];
   onToggleCheck: (index: number) => void;
 }
@@ -29,7 +29,7 @@ const TaskList = ({
           checked={checkedItems[index]}
           onToggleCheck={() => onToggleCheck(index)}
           onDelete={() => onDelete(index)}
-          onUpdate={() => onUpdate(index, task)}
+          onUpdate={() => onUpdate(index)}
         />
       ))}
     </ScrollView>
