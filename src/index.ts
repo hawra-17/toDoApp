@@ -1,15 +1,15 @@
 /*
 first to run it (npx tsx src/index.ts )
 then open another termanl (npx ngrok http 3000)
-then change forwarding on restOfLogin , signUp  & index of (tabs) 
-*/
+then change forwarding .env( EXPO_PUBLIC_API_URL)
+run the project 
+ */
 
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
 import * as schema from "./db/schema";
 import bcrypt from "bcryptjs";
@@ -22,7 +22,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// === /signup route ===
+// === SIGNUP ===
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -43,15 +43,17 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-//login
-
+// === LOGIN ===
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await db.select().from(users).where(eq(users.email, email));
+    const user = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email));
 
-    if (user.length === 0) {
+    if (!user || user.length === 0) {
       return res.status(401).json({ error: "User not found" });
     }
 
@@ -71,7 +73,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// add-task route (need fix  )
+// === ADD TASK ===
 app.post("/add-task", async (req, res) => {
   const { title, description, creator_id } = req.body;
 
@@ -80,7 +82,7 @@ app.post("/add-task", async (req, res) => {
       task_title: title,
       task_description: description || "",
       created_at: new Date(),
-      creator_id: creator_id,
+      creator_id,
     });
 
     res.status(200).json({ message: "Task created" });
@@ -90,7 +92,25 @@ app.post("/add-task", async (req, res) => {
   }
 });
 
-// === Startup ===
+// ✅ === GET TASKS BY USER ===
+app.get("/tasks/:id", async (req, res) => {
+  const userId = parseInt(req.params.id);
+  if (!userId) return res.status(400).json({ error: "Invalid user ID" });
+
+  try {
+    const tasks = await db
+      .select()
+      .from(schema.task)
+      .where(eq(schema.task.creator_id, userId));
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Fetch tasks error:", error);
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
+// === SERVER START ===
 app.listen(3000, () => {
   console.log("✅ Server running on port 3000");
 });

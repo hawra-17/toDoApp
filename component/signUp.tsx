@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL;
 
 export default function signUp() {
   const router = useRouter();
@@ -37,7 +38,8 @@ export default function signUp() {
 
     try {
       const res = await fetch(
-        "https://df07-82-167-194-251.ngrok-free.app/signup",
+        `${process.env.EXPO_PUBLIC_API_URL}/signup`,
+
         {
           method: "POST",
           headers: {
