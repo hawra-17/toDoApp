@@ -1,0 +1,249 @@
+// My organizations Page
+import { View, Text, ScrollView, TouchableOpacity, TextInput, SafeAreaView, StatusBar, Platform } from "react-native";
+import { useFonts, Poppins_700Bold } from "@expo-google-fonts/poppins";
+import { Feather } from "@expo/vector-icons";
+import AppLoading from "expo-app-loading";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+
+
+const user = { loggedIn: 0 }; //Real check later
+
+const allOrgs = [ //Fetch
+  {
+    orgId: "1",
+    orgName: "Long name for test Long name for test  Long name for test",
+    role: "admin",
+    type: "business",
+    industry: "Tech",
+  },
+  {
+    orgId: "2",
+    orgName: "Study",
+    role: "member",
+    type: "personal",
+  },
+  {
+    orgId: "3",
+    orgName: "AIP",
+    role: "admin",
+    type: "business",
+    industry: "Tech",
+  },
+];
+
+//Fetch
+const industries = ["Tech", "Retail", "Health", "Finance", "Education", "Other"];
+
+export default function OrgHomeScreen() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "business" | "personal">("all");
+  const [industryFilter, setIndustryFilter] = useState<string | null>(null);
+
+  const [fontsLoaded] = useFonts({
+    Poppins_700Bold,
+  });
+
+  if (!fontsLoaded) return <AppLoading />;
+
+  const filteredOrgs = allOrgs.filter((org) => {
+    const matchesSearch = org.orgName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === "all" || org.type === filterType;
+    const matchesIndustry =
+      filterType !== "business" || !industryFilter || org.industry === industryFilter;
+    return matchesSearch && matchesType && matchesIndustry;
+  });
+  
+// If user is not logged in, a locked screen with login prompt will be shown
+    const router = useRouter();
+    if (user.loggedIn) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white px-6">
+        <Feather name="lock" size={50} color="#F96E2A" style={{ marginBottom: 20 }} />
+
+        <Text className="text-xl text-center text-[#333] mb-1.5"
+        style={{ fontFamily: "Poppins_700Bold" }}>
+          You need to log in
+        </Text>
+
+        <Text className="text-base text-center text-[#555] mb-6">
+          to view and create organizations.
+        </Text>
+
+        <TouchableOpacity onPress={() => router.push("/profile")}>
+          <Text className="text-[#F96E2A] underline text-lg"
+          >
+            Tap here to log in
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+}
+
+// Main screen when user is logged in
+  return (
+<SafeAreaView
+  className="flex-1 bg-white"
+  style={{
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  }}
+>
+        <ScrollView className="flex-1 px-4 pt-6" contentContainerStyle={{ paddingBottom: 20 }}>
+      {/* Title + Plus Button */}
+      <View className="flex-row justify-between items-center mb-3">
+        <Text
+          className="text-2xl text-[#213555]"
+          style={{ fontFamily: "Poppins_700Bold" }}
+        >
+          My Organizations
+        </Text>
+        <TouchableOpacity
+          onPress={() => console.log("Create Org")}
+          className="bg-[#213555] w-8 h-8 rounded-full items-center justify-center"
+        >
+          <Text
+            className="text-2xl font-bold text-white"
+            style={{ fontSize: 18, lineHeight: 20, textAlign: "center", marginTop: -1, }}
+          >＋
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Search */}
+        <View className="flex-row items-center bg-white px-4 py-1 rounded-lg border border-gray-300 mb-3">
+        <Feather name="search" size={20} color="gray" style={{ marginRight: 8 }} />
+        <TextInput
+            className="flex-1 text-gray-800"
+            placeholder="Search organizations..."
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+        />
+        </View>
+
+      {/* Type Filter */}
+      <View className="flex-row flex-wrap gap-2 mb-2">
+        {["all", "business", "personal"].map((type) => (
+          <TouchableOpacity
+            key={type}
+            onPress={() => {
+              setFilterType(type as any);
+              setIndustryFilter(null);
+            }}
+            className={`px-4 py-1.5 rounded-full ${
+              filterType === type ? "bg-[#213555]" : "bg-gray-300"
+            }`}
+          >
+            <Text className="text-white capitalize">{type}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Industry Filter (Only if business) */}
+      {filterType === "business" && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+          <View className="flex-row gap-2">
+            {industries.map((industry) => (
+              <TouchableOpacity
+                key={industry}
+                onPress={() =>
+                  setIndustryFilter(industryFilter === industry ? null : industry)
+                }
+                className={`px-4 py-0.5 rounded-full ${
+                  industryFilter === industry ? "bg-[#F96E2A]" : "bg-gray-300"
+                }`}
+              >
+                <Text className="text-white font-medium">{industry}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      )}
+
+
+      {/* Organization Cards */}
+      {filteredOrgs.length === 0 ? (
+        <Text className="text-gray-500 text-center mt-20">
+          No organizations match your filters.
+        </Text>
+      ) : (
+        
+        <View className="space-y-8 items-center">
+
+            {/* Divider line */}
+            <View className="my-4 items-center">
+                 <View style={{ width: 60, height: 2, backgroundColor: "#F96E2A", borderRadius: 1 }} />
+            </View>
+
+          {filteredOrgs.map((org, index) => {
+            const bgColor = index % 2 === 0 ? "#213555" : "#F96E2A";
+            const logoColor = index % 2 === 0 ? "#F96E2A" : "#213555";
+
+            return (
+              <TouchableOpacity
+                key={org.orgId}
+                onPress={() => console.log("Open org:", org.orgName)}
+                style={{
+                  backgroundColor: bgColor,
+                  width: 250, 
+                  height: 220,
+                  margin: 5,
+                }}
+                className="rounded-2xl px-6 py-5"
+              >
+                <View className="flex-1 justify-center items-center">
+                  {/* Circle with First Letter */}
+                  <View
+                    className="w-20 h-20 rounded-full mb-3 items-center justify-center"
+                    style={{ backgroundColor: "#FBF8EF" }}
+                    
+                  >
+                    <Text
+                      className="text-3xl text-center" 
+                      style={{ color: logoColor, fontFamily: "Poppins_700Bold" }}
+                    >
+                      {org.orgName[0]}
+                    </Text>
+                  </View>
+
+                    <Text
+                    className="text-white text-xl mb-1 text-center"
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                    style={{
+                        fontFamily: "Poppins_700Bold",
+                        maxWidth: 200, 
+                        textAlign: "center",
+                    }}
+                    >
+                    {org.orgName}
+                    </Text>
+
+
+                  <Text className="text-white text-sm">
+                    
+                   <Text style={{ fontFamily: "Poppins_700", textTransform: "capitalize" }}> {org.role} | {org.type}</Text>
+                  </Text>
+
+                  {org.type === "business" && (
+                    <Text className="text-white text-sm mt-1 italic">
+                      {org.industry}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+            
+          })}
+
+            {/* Divider line */}
+          <View className="my-4 items-center">
+            <View style={{ width: 60, height: 2, backgroundColor: "#F96E2A", borderRadius: 1 }} />
+          </View>
+        </View>
+        
+      )}
+      
+    </ScrollView>
+    </SafeAreaView>
+  );
+}

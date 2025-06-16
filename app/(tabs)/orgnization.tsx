@@ -1,12 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
 import React from "react";
+import OrgHomeScreen from "../pages/organization"; // Adjust if your structure differs
 
-export default function orgnization() {
-  return (
-    <View>
-      <Text>orgnization</Text>
-    </View>
-  );
+export default function OrganizationTab() {
+  return <OrgHomeScreen />; // go to My Orgs page.
 }
-
-const styles = StyleSheet.create({});
