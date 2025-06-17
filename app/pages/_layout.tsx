@@ -9,6 +9,12 @@ const Layout = () => {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="prof"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 };

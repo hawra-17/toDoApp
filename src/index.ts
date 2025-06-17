@@ -2,7 +2,7 @@
 first to run it (npx tsx src/index.ts )
 then open another termanl (npx ngrok http 3000)
 then change forwarding .env( EXPO_PUBLIC_API_URL)
-run the project 
+run the project
  */
 
 import "dotenv/config";
@@ -22,7 +22,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// === SIGNUP ===
+//  SIGNUP
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -43,7 +43,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// === LOGIN ===
+//  LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -73,26 +73,29 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// === ADD TASK ===
+// ADD TASK
 app.post("/add-task", async (req, res) => {
   const { title, description, creator_id } = req.body;
 
   try {
-    await db.insert(schema.task).values({
-      task_title: title,
-      task_description: description || "",
-      created_at: new Date(),
-      creator_id,
-    });
+    const insertedTask = await db
+      .insert(schema.task)
+      .values({
+        task_title: title,
+        task_description: description || "",
+        created_at: new Date(),
+        creator_id,
+      })
+      .returning();
 
-    res.status(200).json({ message: "Task created" });
+    res.status(200).json(insertedTask[0]);
   } catch (error) {
     console.error("Task error:", error);
     res.status(500).json({ error: "Failed to create task" });
   }
 });
 
-// ✅ === GET TASKS BY USER ===
+// GET TASKS BY USER
 app.get("/tasks/:id", async (req, res) => {
   const userId = parseInt(req.params.id);
   if (!userId) return res.status(400).json({ error: "Invalid user ID" });
@@ -110,7 +113,46 @@ app.get("/tasks/:id", async (req, res) => {
   }
 });
 
-// === SERVER START ===
+//  UPDATE TASK
+app.put("/update-task/:id", async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const { title, description } = req.body;
+
+  if (!taskId) return res.status(400).json({ error: "Invalid task ID" });
+
+  try {
+    await db
+      .update(schema.task)
+      .set({
+        task_title: title,
+        task_description: description || "",
+      })
+      .where(eq(schema.task.task_id, taskId));
+
+    res.status(200).json({ message: "Task updated" });
+  } catch (error) {
+    console.error("Update task error:", error);
+    res.status(500).json({ error: "Failed to update task" });
+  }
+});
+
+//  DELETE TASK
+app.delete("/delete-task/:id", async (req, res) => {
+  const taskId = parseInt(req.params.id);
+
+  if (!taskId) return res.status(400).json({ error: "Invalid task ID" });
+
+  try {
+    await db.delete(schema.task).where(eq(schema.task.task_id, taskId));
+
+    res.status(200).json({ message: "Task deleted" });
+  } catch (error) {
+    console.error("Delete task error:", error);
+    res.status(500).json({ error: "Failed to delete task" });
+  }
+});
+
+// =SERVER START
 app.listen(3000, () => {
-  console.log("✅ Server running on port 3000");
+  console.log("Server running on port 3000");
 });
