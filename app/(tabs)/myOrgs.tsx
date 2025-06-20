@@ -4,24 +4,22 @@ import { useFonts, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { Feather } from "@expo/vector-icons";
 import AppLoading from "expo-app-loading";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-
+import React, { useState , useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
+import { Image } from "react-native";
+import CreateOrgModal from "../../component/orgs/CreateOrgModal";
+import JoinOrgModal from "../../component/orgs/joinOrgModal";
 
 const user = { loggedIn: 0 }; //Real check later
 
 const allOrgs = [ //Fetch
   {
-    orgId: "1",
-    orgName: "Long name for test Long name for test  Long name for test",
-    role: "admin",
-    type: "business",
-    industry: "Tech",
-  },
-  {
     orgId: "2",
     orgName: "Study",
     role: "member",
     type: "personal",
+    description: "Private study group",
   },
   {
     orgId: "3",
@@ -29,16 +27,67 @@ const allOrgs = [ //Fetch
     role: "admin",
     type: "business",
     industry: "Tech",
+    
   },
 ];
 
 //Fetch
 const industries = ["Tech", "Retail", "Health", "Finance", "Education", "Other"];
 
-export default function OrgHomeScreen() {
+export default function myOrgs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "business" | "personal">("all");
   const [industryFilter, setIndustryFilter] = useState<string | null>(null);
+  const [showOptions, setShowOptions] = useState(false);
+  const navigation = useNavigation();
+  
+  //joinModal
+  const [showJoinModal, setShowJoinModal] = useState(false);
+
+  // States to control (Create) Modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [errors, setErrors] = useState({
+    orgName: false,
+    orgCode: false,
+    businessName: false,
+  });
+  const [orgName, setOrgName] = useState("");
+  const [orgCode, setOrgCode] = useState("");
+  const [orgPassword, setOrgPassword] = useState("");
+  const [orgBody, setOrgBody] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [isBusiness, setIsBusiness] = useState(false);
+
+  const [businessName, setBusinessName] = useState("");
+  const [websiteURL, setWebsiteURL] = useState("");
+  const [industry, setIndustry] = useState<"Tech" | "Retail" | "Health" | "Finance" | "Education" | "Other">("Tech");
+  const [contactEmail, setContactEmail] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+
+  const pickImage = async () => {
+    // Ask for permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access media library is required!");
+      return;
+    }
+
+    // Let user pick image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setLogoUrl(uri); // Auto-fill input + display preview
+    }
+  };
+
+  useEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, []);
 
   const [fontsLoaded] = useFonts({
     Poppins_700Bold,
@@ -53,62 +102,84 @@ export default function OrgHomeScreen() {
       filterType !== "business" || !industryFilter || org.industry === industryFilter;
     return matchesSearch && matchesType && matchesIndustry;
   });
-  
-// If user is not logged in, a locked screen with login prompt will be shown
-    const router = useRouter();
-    if (user.loggedIn) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white px-6">
-        <Feather name="lock" size={50} color="#F96E2A" style={{ marginBottom: 20 }} />
 
-        <Text className="text-xl text-center text-[#333] mb-1.5"
-        style={{ fontFamily: "Poppins_700Bold" }}>
-          You need to log in
-        </Text>
+const router = useRouter();
 
-        <Text className="text-base text-center text-[#555] mb-6">
-          to view and create organizations.
-        </Text>
-
-        <TouchableOpacity onPress={() => router.push("/profile")}>
-          <Text className="text-[#F96E2A] underline text-lg"
-          >
-            Tap here to log in
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+function handleJoinSuccess({ orgData, userRole }: { orgData: any; userRole: "admin" | "member" }) {
+  console.log("Joined org successfully:", orgData);
+  router.push({
+    pathname: "/pages/organization/insideOrg",
+    params: {
+      orgData: JSON.stringify(orgData),
+      userRole,
+    },
+  });
 }
 
-// Main screen when user is logged in
   return (
-<SafeAreaView
-  className="flex-1 bg-white"
-  style={{
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  }}
->
-        <ScrollView className="flex-1 px-4 pt-6" contentContainerStyle={{ paddingBottom: 20 }}>
-      {/* Title + Plus Button */}
+      <SafeAreaView
+        className="flex-1 bg-white"
+        style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, }}
+      >
+      <ScrollView className="flex-1 px-4 pt-6" contentContainerStyle={{ paddingBottom: 20 }}>
+
+      {/* Title + create and join */}
       <View className="flex-row justify-between items-center mb-3">
+        
         <Text
           className="text-2xl text-[#213555]"
           style={{ fontFamily: "Poppins_700Bold" }}
         >
           My Organizations
         </Text>
+        
         <TouchableOpacity
-          onPress={() => console.log("Create Org")}
-          className="bg-[#213555] w-8 h-8 rounded-full items-center justify-center"
+          onPress={() => setShowCreateModal(true)}
+          className="px-4 py-2 rounded-full border ml-12"
+          style={{
+            borderColor: "#213555",
+            borderWidth: 1,
+          }}
         >
           <Text
-            className="text-2xl font-bold text-white"
-            style={{ fontSize: 18, lineHeight: 20, textAlign: "center", marginTop: -1, }}
-          >＋
+            className="text-[#213555]"
+            style={{
+              fontFamily: "Poppins",
+              fontSize: 12,
+              textAlign: "center",
+            }}
+          >
+            Create
           </Text>
         </TouchableOpacity>
-      </View>
 
+        <TouchableOpacity
+          onPress={() => setShowJoinModal(true)}
+          className="px-4 py-2 bg-[#213555] rounded-full border"
+          style={{
+            borderColor: "#213555",
+            borderWidth: 1,
+          }}
+        >
+          <Text
+            className="text-white"
+            style={{
+              fontFamily: "Poppins",
+              fontSize: 12,
+              textAlign: "center",
+            }}
+          >
+            Join
+          </Text>
+        </TouchableOpacity>
+        
+        <JoinOrgModal
+        visible={showJoinModal}
+        setVisible={setShowJoinModal}
+        onJoinSuccess={handleJoinSuccess}
+      />
+      </View>
+      
       {/* Search */}
         <View className="flex-row items-center bg-white px-4 py-1 rounded-lg border border-gray-300 mb-3">
         <Feather name="search" size={20} color="gray" style={{ marginRight: 8 }} />
@@ -181,7 +252,23 @@ export default function OrgHomeScreen() {
             return (
               <TouchableOpacity
                 key={org.orgId}
-                onPress={() => console.log("Open org:", org.orgName)}
+
+                onPress={() => {
+                  const orgData = {
+                    orgId: org.orgId,
+                    orgName: org.orgName,
+                    description: org.description || "",
+                  };
+                  const userRole = org.role === "admin" ? "admin" : "member";
+                  router.push({
+                    pathname: "/pages/organization/insideOrg",
+                    params: {
+                      orgData: JSON.stringify(orgData),
+                      userRole,
+                    },
+                  });
+                }}
+
                 style={{
                   backgroundColor: bgColor,
                   width: 250, 
@@ -191,7 +278,7 @@ export default function OrgHomeScreen() {
                 className="rounded-2xl px-6 py-5"
               >
                 <View className="flex-1 justify-center items-center">
-                  {/* Circle with First Letter */}
+                  {/* Circle with first letter */}
                   <View
                     className="w-20 h-20 rounded-full mb-3 items-center justify-center"
                     style={{ backgroundColor: "#FBF8EF" }}
@@ -244,6 +331,79 @@ export default function OrgHomeScreen() {
       )}
       
     </ScrollView>
-    </SafeAreaView>
+    
+    <CreateOrgModal
+      visible={showCreateModal}
+      setVisible={setShowCreateModal}
+      orgName={orgName}
+      setOrgName={setOrgName}
+      orgCode={orgCode}
+      setOrgCode={setOrgCode}
+      orgPassword={orgPassword}
+      setOrgPassword={setOrgPassword}
+      orgBody={orgBody}
+      setOrgBody={setOrgBody}
+      visibility={visibility}
+      setVisibility={setVisibility}
+      isBusiness={isBusiness}
+      setIsBusiness={setIsBusiness}
+      businessName={businessName}
+      setBusinessName={setBusinessName}
+      websiteURL={websiteURL}
+      setWebsiteURL={setWebsiteURL}
+      industry={industry}
+      setIndustry={setIndustry}
+      contactEmail={contactEmail}
+      setContactEmail={setContactEmail}
+      logoUrl={logoUrl}
+      setLogoUrl={setLogoUrl}
+      pickImage={pickImage}
+      errors={errors}
+      onSubmit={() => {
+      const newErrors = {
+        orgName: !orgName.trim(),
+        orgCode: !orgCode.trim(),
+        businessName: isBusiness && !businessName.trim(),
+      };
+      setErrors(newErrors);
+
+      // Prevent submit if any errors
+      if (Object.values(newErrors).some(Boolean)) {
+        return;
+      }
+
+      // no error?
+      const newOrg = {
+        orgName,
+        orgCode,
+        orgPassword,
+        orgBody,
+        visibility,
+        isBusiness,
+        businessName,
+        websiteURL,
+        industry,
+        contactEmail,
+        logoUrl,
+      };
+
+      console.log("Creating org:", newOrg);
+
+      // call API to save org here
+
+      setShowCreateModal(false);
+      // reset fields after close
+      setOrgName("");
+      setOrgCode("");
+      setOrgPassword("");
+      setOrgBody("");
+      setBusinessName("");
+      setWebsiteURL("");
+      setContactEmail("");
+      setLogoUrl("");
+    }}
+    />
+    
+  </SafeAreaView>
   );
 }

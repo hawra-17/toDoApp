@@ -1,6 +1,8 @@
 import React from "react";
-import OrgHomeScreen from "../pages/organization"; // Adjust if your structure differs
+import OrgHomeScreen from "./myOrgs"; 
+import ExploreOrgs from "../pages/organization/exploreOrgs"; 
 
 export default function OrganizationTab() {
-  return <OrgHomeScreen />; // go to My Orgs page.
+  return <ExploreOrgs />; // go to My Orgs page.
+  
 }

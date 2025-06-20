@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 const Layout = () => {
   return (
     <Tabs>
+
       <Tabs.Screen
         name="index"
         options={{
@@ -18,6 +19,7 @@ const Layout = () => {
           ),
         }}
       />
+
       <Tabs.Screen
         name="orgnization"
         options={{
@@ -28,11 +30,13 @@ const Layout = () => {
               <Ionicons
                 size={24}
                 name={focused ? "people" : "people-outline"}
+                color={focused ? "#213555" : "#999"}
               />
             </>
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
@@ -48,6 +52,15 @@ const Layout = () => {
           ),
         }}
       />
+
+      {/* Hide this from tab bar but allow navigation */}
+      <Tabs.Screen
+        name="myOrgs"
+        options={{
+          href: null,
+        }}
+      />
+      
     </Tabs>
   );
 };
