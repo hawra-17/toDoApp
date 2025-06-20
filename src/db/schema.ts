@@ -1,6 +1,14 @@
-// DB Schema 
-import { pgTable, serial, integer, varchar,
-        text, timestamp, boolean, pgEnum, } from "drizzle-orm/pg-core";
+// DB Schema
+import {
+  pgTable,
+  serial,
+  integer,
+  varchar,
+  text,
+  timestamp,
+  boolean,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 
 // Define enums:
 export const taskStatusEnum = pgEnum("taskStatus", ["todo", "done"]);
@@ -47,7 +55,7 @@ export const business_details = pgTable("business_details", {
     .references(() => organizations.org_id),
   business_name: varchar("business_name").notNull(),
   website_url: varchar("website_url"),
-  industry: industryEnum("industry"), 
+  industry: industryEnum("industry"),
   contact_email: varchar("contact_email", { length: 255 }),
   logo_url: varchar("logo_url", { length: 255 }),
 });
@@ -60,7 +68,7 @@ export const task = pgTable("task", {
   duedate: timestamp("duedate"),
   taskStatus: taskStatusEnum("status").notNull().default("todo"),
   created_at: timestamp("created_at").notNull(),
-  last_edit: timestamp("last_edit"), 
+  last_edit: timestamp("last_edit"),
   org_id: integer("org_id").references(() => organizations.org_id),
   creator_id: integer("creator_id")
     .notNull()

@@ -1,60 +1,158 @@
-// To run the file >> npx tsx src/index.ts
+/*
+first to run it (npx tsx src/index.ts )
+then open another termanl (npx ngrok http 3000)
+then change forwarding .env( EXPO_PUBLIC_API_URL)
+run the project
+ */
 
-import 'dotenv/config';
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { defineConfig } from 'drizzle-kit';
-import * as schema from './db/schema';
-import bcrypt from 'bcryptjs';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import { eq } from "drizzle-orm";
+import * as schema from "./db/schema";
+import bcrypt from "bcryptjs";
 
-// Connect Drizzle ORM to the database
+const SALT_ROUNDS = 10;
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle({ client: sql });
 
-const SALT_ROUNDS = 10; // For hashing
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-type NewUser = {
-  email: string;
-  name: string;
-  password: string; 
-};
+//  SIGNUP
+app.post("/signup", async (req, res) => {
+  const { name, email, password } = req.body;
 
+  try {
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-// QUERIES: 
-export async function addUser(user: NewUser) {
-  // 1. Hash the password
-  const hashedPassword = await bcrypt.hash(user.password, SALT_ROUNDS);
+    await db.insert(schema.users).values({
+      name,
+      email,
+      password: hashedPassword,
+      created_at: new Date(),
+    });
 
-  // 2. Prepare user data 
-  const userData = {
-    email: user.email,
-    name: user.name,
-    password: hashedPassword,
-    created_at: new Date(),
-  };
-
-  // 3. Insert into DB
-  await db.insert(schema.users).values(userData);
-
-  console.log('User added successfully!');
-}
-
-/* U can add new user this way: */
-
-/*
-addUser({
-  name: "Zahra",
-  email: "z@example.com",
-  password: "Z123@",
+    res.status(200).json({ message: "User registered successfully" });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ error: "Failed to register user" });
+  }
 });
-*/
 
-async function main() {
+//  LOGIN
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
 
-  // Fetch users (will be deleted)
-  const users = await db.select().from(schema.users);
-  console.log('Stored users:', users);
+  try {
+    const user = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email));
 
-}
+    if (!user || user.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
 
-main();
+    const match = await bcrypt.compare(password, user[0].password);
+    if (!match) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    res.status(200).json({
+      user_id: user[0].user_id,
+      name: user[0].name,
+      email: user[0].email,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// ADD TASK
+app.post("/add-task", async (req, res) => {
+  const { title, description, creator_id } = req.body;
+
+  try {
+    const insertedTask = await db
+      .insert(schema.task)
+      .values({
+        task_title: title,
+        task_description: description || "",
+        created_at: new Date(),
+        creator_id,
+      })
+      .returning();
+
+    res.status(200).json(insertedTask[0]);
+  } catch (error) {
+    console.error("Task error:", error);
+    res.status(500).json({ error: "Failed to create task" });
+  }
+});
+
+// GET TASKS BY USER
+app.get("/tasks/:id", async (req, res) => {
+  const userId = parseInt(req.params.id);
+  if (!userId) return res.status(400).json({ error: "Invalid user ID" });
+
+  try {
+    const tasks = await db
+      .select()
+      .from(schema.task)
+      .where(eq(schema.task.creator_id, userId));
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Fetch tasks error:", error);
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
+//  UPDATE TASK
+app.put("/update-task/:id", async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const { title, description } = req.body;
+
+  if (!taskId) return res.status(400).json({ error: "Invalid task ID" });
+
+  try {
+    await db
+      .update(schema.task)
+      .set({
+        task_title: title,
+        task_description: description || "",
+      })
+      .where(eq(schema.task.task_id, taskId));
+
+    res.status(200).json({ message: "Task updated" });
+  } catch (error) {
+    console.error("Update task error:", error);
+    res.status(500).json({ error: "Failed to update task" });
+  }
+});
+
+//  DELETE TASK
+app.delete("/delete-task/:id", async (req, res) => {
+  const taskId = parseInt(req.params.id);
+
+  if (!taskId) return res.status(400).json({ error: "Invalid task ID" });
+
+  try {
+    await db.delete(schema.task).where(eq(schema.task.task_id, taskId));
+
+    res.status(200).json({ message: "Task deleted" });
+  } catch (error) {
+    console.error("Delete task error:", error);
+    res.status(500).json({ error: "Failed to delete task" });
+  }
+});
+
+// =SERVER START
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});

@@ -1,8 +1,7 @@
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import React, { useState } from "react";
-
-import { Ionicons } from "@expo/vector-icons";
-import { router, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL;
 
 export default function signUp() {
   const router = useRouter();
@@ -11,7 +10,7 @@ export default function signUp() {
   const [password, setPassword] = useState<string>("");
   const [confirmPass, setConfirmPass] = useState<string>("");
 
-  const SignUp = () => {
+  const SignUp = async () => {
     if (name.length === 0) {
       alert("Please enter your name ");
       return;
@@ -33,8 +32,35 @@ export default function signUp() {
     }
 
     if (!(password === confirmPass)) {
-      alert("Password not mach");
-    } else router.push("./(tabs)");
+      alert("Password not match");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/signup`,
+
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name, email, password }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        Alert.alert("Signup failed", result?.error || "Something went wrong");
+        return;
+      }
+
+      alert("Signup successful!");
+      router.push("./(tabs)");
+    } catch (error) {
+      Alert.alert("Error", "Signup failed due to network or server error.");
+    }
   };
 
   return (
@@ -53,6 +79,7 @@ export default function signUp() {
           placeholderTextColor="#fff"
           value={email}
           onChangeText={setEmail}
+          autoCapitalize="none"
         />
         <TextInput
           className="flex flex-row items-center bg-gray-500/10 rounded-2xl px-5 py-3 w-72 justify-center space-x-3 mb-4  "
@@ -60,6 +87,7 @@ export default function signUp() {
           placeholderTextColor="#fff"
           value={password}
           onChangeText={setPassword}
+          secureTextEntry
         />
         <TextInput
           className="flex flex-row items-center bg-gray-500/10 rounded-2xl px-5 py-3 w-72 justify-center space-x-3 mb-4  "
@@ -67,6 +95,7 @@ export default function signUp() {
           placeholderTextColor="#fff"
           value={confirmPass}
           onChangeText={setConfirmPass}
+          secureTextEntry
         />
         <TouchableOpacity
           className="flex flex-row mt-7 rounded-2xl bg-white px-5 py-3 w-72 items-center justify-center"
