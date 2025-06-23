@@ -9,6 +9,7 @@ import {
   boolean,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { primaryKey } from "drizzle-orm/pg-core";
 
 // Define enums:
 export const taskStatusEnum = pgEnum("taskStatus", ["todo", "done"]);
@@ -69,48 +70,54 @@ export const task = pgTable("task", {
   taskStatus: taskStatusEnum("status").notNull().default("todo"),
   created_at: timestamp("created_at").notNull(),
   last_edit: timestamp("last_edit"),
-  org_id: integer("org_id").references(() => organizations.org_id),
+  org_id: integer("org_id").references(() => organizations.org_id, { onDelete: "cascade" }),
   creator_id: integer("creator_id")
     .notNull()
     .references(() => users.user_id),
 });
 
 // (5. task_assignees)
+
 export const task_assignees = pgTable(
   "task_assignees",
   {
     org_id: integer("org_id")
       .notNull()
-      .references(() => organizations.org_id),
+      .references(() => organizations.org_id, { onDelete: "cascade" }),
     task_id: integer("task_id")
       .notNull()
-      .references(() => task.task_id),
+      .references(() => task.task_id, { onDelete: "cascade" }),
     user_id: integer("user_id")
       .notNull()
-      .references(() => users.user_id),
+      .references(() => users.user_id, { onDelete: "cascade" }),
     assigned_at: timestamp("assigned_at").notNull(),
   },
-  (table) => ({
-    // Composite primary key (task_id, user_id)
-    pk: [table.task_id, table.user_id],
-  })
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.task_id, table.user_id] }),
+    };
+  }
 );
 
 // (6. organization_members)
+
 export const organization_members = pgTable(
   "organization_members",
   {
     org_id: integer("org_id")
       .notNull()
-      .references(() => organizations.org_id),
+      .references(() => organizations.org_id, { onDelete: "cascade" }),
+
     user_id: integer("user_id")
       .notNull()
-      .references(() => users.user_id),
+      .references(() => users.user_id, { onDelete: "cascade" }),
+
     role: roleEnum("role").notNull(),
     joined_at: timestamp("joined_at").notNull(),
   },
-  (table) => ({
-    // Composite primary key (org_id, user_id)
-    pk: [table.org_id, table.user_id],
-  })
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.org_id, table.user_id] }),
+    };
+  }
 );

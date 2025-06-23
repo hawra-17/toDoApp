@@ -28,7 +28,10 @@ const Card = ({
         className=" bg-white "
       />
 
-      <Text className="text-white text-base items-center justify-center ml-4 ">
+      <Text className="text-white text-base items-center justify-center ml-4 "
+        style={{
+          fontFamily: "Poppins_400Regular",
+        }}>
         {text}
       </Text>
       <View className="flex-1 items-end flex-row justify-end gap-3 ">

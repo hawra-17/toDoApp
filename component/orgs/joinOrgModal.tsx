@@ -12,6 +12,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL;
+
 interface JoinOrgModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
@@ -22,10 +26,15 @@ interface OrgFetchResponse {
   exists: boolean;
   visibility?: "public" | "private";
   orgData?: {
+    orgId: string;
     orgName: string;
+    industry?: string;
+    description?: string;
+    type?: "business" | "personal";
   };
-  passwordMatch?: boolean; // used only for private orgs
+  passwordMatch?: boolean;
 }
+
 
 export default function JoinOrgModal({
   visible,
@@ -48,88 +57,138 @@ export default function JoinOrgModal({
       setIsLoading(false);
   };
 
-  // Simulated fetch  - WILL BE REPLACED
 async function fetchOrgByCode(code: string): Promise<OrgFetchResponse> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      if (code === "123") {
-        resolve({
-          exists: true,
-          visibility: "public",
-          orgData: { orgName: "Test Org" },
-        });
-      } else if (code === "456") {
-        resolve({
-          exists: true,
-          visibility: "private",
-          orgData: { orgName: "Private Org" },
-          passwordMatch: false,
-        });
-      } else {
-        resolve({ exists: false });
-      }
-    }, 500); // simulate delay
-  });
+  try {
+    const url = `${API_BASE}/organizations/code/${code.trim()}`;
+    console.log("Calling:", url);
+
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.log("Fetch failed:", res.status);
+      return { exists: false };
+    }
+
+    const data = await res.json();
+    console.log("Fetched org:", data);
+
+    return {
+      exists: true,
+      visibility: data.visibility,
+      orgData: {
+        orgId: data.orgId,
+        orgName: data.orgName,
+      },
+    };
+  } catch (err) {
+    console.log("Error in fetchOrgByCode:", err);
+    return { exists: false };
+  }
 }
 
-  const handleSearch = async () => {
-    setError("");
-    if (!orgCode.trim()) {
-      setError("Please enter an organization code.");
-      return;
-    }
-    setIsLoading(true);
-    const res = await fetchOrgByCode(orgCode.trim());
-    setIsLoading(false);
 
-    if (!res.exists) {
-      setError("No organization found with this code.");
+const handleSearch = async () => {
+  setError("");
+  if (!orgCode.trim()) {
+    setError("Please enter an organization code.");
+    return;
+  }
+
+  setIsLoading(true);
+  const lookup = await fetchOrgByCode(orgCode.trim());
+  setIsLoading(false);
+
+  if (!lookup.exists) {
+    setError("No organization found with this code.");
+    setStep("error");
+    return;
+  }
+
+  if (lookup.visibility === "public") {
+    setOrgData(lookup.orgData);
+    setStep("joining");
+
+    const userId = await AsyncStorage.getItem("user_id");
+
+    const res = await fetch(`${API_BASE}/organizations/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        org_code: orgCode.trim(),
+        org_password: "", // for public org
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const message = data.error || "Failed to join";
+      setError(message); // from backend
       setStep("error");
+
       return;
     }
 
-    if (res.visibility === "public") {
-      setOrgData(res.orgData);
-      setStep("joining");
-      setTimeout(() => {
+    setTimeout(() => {
       onJoinSuccess({
-        orgData: res.orgData,
-        userRole: "member", //get this from the backend later
+        orgData: data,
+        userRole: "member",
       });
-         setVisible(false);
-        reset();
-      }, 1500);
-    } else {
-      setOrgData(res.orgData);
-      setStep("password");
-    }
-  };
+      setVisible(false);
+      reset();
+    }, 1500);
+  } else {
+    setOrgData(lookup.orgData);
+    setStep("password");
+  }
+};
 
-  const handleJoinPrivate = async () => {
-    setError("");
-    if (!orgPassword.trim()) {
-      setError("Please enter the password.");
-      return;
-    }
 
-    setIsLoading(true);
-    // Simulate password check
-    const res = await fetchOrgByCode(orgCode.trim());
+const handleJoinPrivate = async () => {
+  setError("");
+  if (!orgPassword.trim()) {
+    setError("Please enter the password.");
+    return;
+  }
+
+  setIsLoading(true);
+  const userId = await AsyncStorage.getItem("user_id");
+
+  try {
+    const res = await fetch(`${API_BASE}/organizations/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        org_code: orgCode.trim(),
+        org_password: orgPassword.trim(),
+      }),
+    });
+
+    const data = await res.json();
     setIsLoading(false);
 
-    // For demo, password is "password123"
-    if (orgPassword === "password123") {
-      setStep("joining");
-      setTimeout(() => {
-        onJoinSuccess(res.orgData);
-        setVisible(false);
-        reset();
-      }, 1500);
-    } else {
-      setError("Incorrect password.");
-      setStep("password");
+    if (!res.ok) {
+        const message = data.error || "Join failed";
+        setError(message);  // from backend
+      return;
     }
-  };
+
+    setStep("joining");
+    setTimeout(() => {
+      onJoinSuccess({
+        orgData: data,
+        userRole: "member",
+      });
+      setVisible(false);
+      reset();
+    }, 1500);
+  } catch (err) {
+    console.error("Join error:", err);
+    setError("Something went wrong");
+    setIsLoading(false);
+  }
+};
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
@@ -155,8 +214,10 @@ async function fetchOrgByCode(code: string): Promise<OrgFetchResponse> {
                 />
                 {error ? <Text className="text-red-500 text-sm mb-2 text-center"
                               style={{ fontFamily: "Poppins_400Regular" }}
-                                 >{error}
-                          </Text> : null}
+                          >
+                            {error}
+                          </Text> 
+                : null}
                 <TouchableOpacity
                   onPress={handleSearch}
                   className="bg-[#213555] py-2 rounded-full"
@@ -188,7 +249,7 @@ async function fetchOrgByCode(code: string): Promise<OrgFetchResponse> {
 
             {step === "password" && (
               <>
-                <Text className="mb-2 text-center text-[#213555]">Private Organization - enter password</Text>
+                <Text className="mb-2 text-center text-[#213555]">Private Organization - Enter password</Text>
                 <TextInput
                   placeholder="Password"
                   secureTextEntry
@@ -239,7 +300,7 @@ async function fetchOrgByCode(code: string): Promise<OrgFetchResponse> {
 
             {step === "error" && (
               <>
-                <Text className="text-center text-red-500 mb-4">{error}</Text>
+                <Text className="text-center text-red-400 mb-4 text-sm"  style={{ fontFamily: "Poppins_400Regular"}}>{error}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setStep("search");

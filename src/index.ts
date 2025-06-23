@@ -10,9 +10,14 @@ import express from "express";
 import cors from "cors";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import * as schema from "./db/schema";
 import bcrypt from "bcryptjs";
+
+// ---- Routes ----
+import exploreOrgRoute from "./routes/exploreOrgRoute"; 
+import myOrgsRoute from "./routes/myOrgsRoute"; 
+import insideOrgRoutes from "./routes/insideOrgRoutes"; 
 
 const SALT_ROUNDS = 10;
 const sql = neon(process.env.DATABASE_URL!);
@@ -104,7 +109,12 @@ app.get("/tasks/:id", async (req, res) => {
     const tasks = await db
       .select()
       .from(schema.task)
-      .where(eq(schema.task.creator_id, userId));
+      .where(
+        and(
+        eq(schema.task.creator_id, userId),
+        isNull(schema.task.org_id)
+          )
+        )
 
     res.status(200).json(tasks);
   } catch (error) {
@@ -112,6 +122,7 @@ app.get("/tasks/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch tasks" });
   }
 });
+
 
 //  UPDATE TASK
 app.put("/update-task/:id", async (req, res) => {
@@ -136,6 +147,7 @@ app.put("/update-task/:id", async (req, res) => {
   }
 });
 
+
 //  DELETE TASK
 app.delete("/delete-task/:id", async (req, res) => {
   const taskId = parseInt(req.params.id);
@@ -151,6 +163,14 @@ app.delete("/delete-task/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete task" });
   }
 });
+
+
+// ------------------ Mount ORGS Routes ----------------------
+app.use(insideOrgRoutes);
+app.use(myOrgsRoute);
+app.use(exploreOrgRoute);
+// ------------------ END OF ORGS Routes ----------------------
+
 
 // =SERVER START
 app.listen(3000, () => {
