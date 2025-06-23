@@ -18,6 +18,7 @@ interface Task {
   id: number;
   title: string;
   checked: boolean;
+  assigneeName?: string | null;
 }
 
 export default function Index() {
@@ -51,6 +52,7 @@ export default function Index() {
           id: t.task_id,
           title: t.task_title,
           checked: t.taskStatus === "done",
+          assigneeName: null, //new
         }))
       );
     } catch (error) {
@@ -72,6 +74,10 @@ export default function Index() {
 
     try {
       if (editTask) {
+        console.log("Updating task:", {
+  id: editTask.id,
+  title: task,
+});
         const res = await fetch(`${API_BASE}/update-task/${editTask.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -103,6 +109,7 @@ export default function Index() {
             id: data.task_id,
             title: task,
             checked: false,
+            assigneeName: null,
           },
         ]);
       }
@@ -164,6 +171,7 @@ export default function Index() {
             onDelete={deleteTask}
             onUpdate={startEdit}
             onToggleCheck={toggleCheck}
+            type="personal" // default
           />
           <TaskInput text={task} onChange={setTask} onAdd={addOrUpdateTask} />
         </View>

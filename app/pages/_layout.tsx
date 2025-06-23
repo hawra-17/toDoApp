@@ -9,6 +9,14 @@ const Layout = () => {
           headerShown: false,
         }}
       />
+
+      <Stack.Screen 
+      name="organization/insideOrg" 
+      options={{
+        headerShown: false,
+      }}
+     />
+
       <Stack.Screen
         name="prof"
         options={{
